@@ -73,7 +73,7 @@ class AddSectionButton extends React.Component {
 class SectionRow extends React.Component {
     render() {
         return (
-            <ListItem primaryText={this.props.name} rightIcon={<NavigationClose />}/>
+            <ListItem primaryText={this.props.name} rightIcon={<NavigationClose />} disabled={true} />
         );
     }
 }
@@ -108,17 +108,51 @@ class IngredientSection extends React.Component {
 }
 
 class RecipeInfoSection extends React.Component {
+    constructor(props) {
+        super(props);
+        this.handleNameChange = this.handleNameChange.bind(this);
+        this.handleURLChange = this.handleURLChange.bind(this);
+        this.handleServingsChange = this.handleServingsChange.bind(this);
+        this.handleDifficultyChange = this.handleDifficultyChange.bind(this);
+        this.handleActiveTimeChange = this.handleActiveTimeChange.bind(this);
+        this.handleTotalTimeChange = this.handleTotalTimeChange.bind(this);
+    }
+
+    handleNameChange(e) {
+        this.props.onNameChange(e.target.value);
+    }
+
+    handleURLChange(e) {
+        this.props.onURLChange(e.target.value);
+    }
+
+    handleServingsChange(e) {
+        this.props.onServingsChange(e.target.value);
+    }
+
+    handleDifficultyChange(e) {
+        this.props.onDifficultyChange(e.target.value);
+    }
+
+    handleActiveTimeChange(e) {
+        this.props.onActiveTimeChange(e.target.value);
+    }
+
+    handleTotalTimeChange(e) {
+        this.props.onTotalTimeChange(e.target.value);
+    }
+
     render() {
         return (
             <div>
                 <h2>Recipe Info Section</h2>
-                <TextField floatingLabelText="Name"/>
-                <TextField floatingLabelText="URL"/>
+                <TextField value={this.props.recipe.name} floatingLabelText="Name" onChange={this.handleNameChange}/>
+                <TextField value={this.props.recipe.url} floatingLabelText="URL" onChange={this.handleURLChange}/>
                 <br/>
-                <TextField floatingLabelText="Servings"/>
-                <TextField floatingLabelText="Difficulty"/>
-                <TextField floatingLabelText="Active Time"/>
-                <TextField floatingLabelText="Total Time"/>
+                <TextField value={this.props.recipe.servings} floatingLabelText="Servings" onChange={this.handleServingsChange}/>
+                <TextField value={this.props.recipe.difficultyRating} floatingLabelText="Difficulty" onChange={this.handleDifficultyChange}/>
+                <TextField value={this.props.recipe.time.active} floatingLabelText="Active Time" onChange={this.handleActiveTimeChange}/>
+                <TextField value={this.props.recipe.time.total} floatingLabelText="Total Time" onChange={this.handleTotalTimeChange}/>
                 <br/>
             </div>
         );
@@ -126,18 +160,88 @@ class RecipeInfoSection extends React.Component {
 }
 
 class NewRecipePage extends React.Component {
-    constructor() {
-        super();
+    constructor(props) {
+        super(props);
         this.state = {
-            SECTIONS: ['Main', 'Side']
+            recipe: {
+                recipeId: 'test-id',
+                name: '',
+                url: 'test.com',
+                time: {
+                    active: 0,
+                    total: 0
+                },
+                servings: 0,
+                difficultyRating: 0,
+                ingredientSections: [
+                    {
+                        name: 'Main',
+                        id: 'main'
+                    }
+                ],
+                ingredients: [],
+                directions: [],
+                notes: []
+            }
         };
+
+        this.handleNameChange = this.handleNameChange.bind(this);
+        this.handleURLChange = this.handleURLChange.bind(this);
+        this.handleServingsChange = this.handleServingsChange.bind(this);
+        this.handleDifficultyChange = this.handleDifficultyChange.bind(this);
+        this.handleActiveTimeChange = this.handleActiveTimeChange.bind(this);
+        this.handleTotalTimeChange = this.handleTotalTimeChange.bind(this);
     }
 
-    handleClick() {
-        var sections = this.state.SECTIONS;
-        sections.push(this.state.SECTIONS.length + 1);
+    handleNameChange(name) {
         this.setState({
-            SECTIONS: sections
+            recipe: Object.assign({}, this.state.recipe, {
+                name: name
+            })
+        });
+    }
+
+    handleURLChange(url) {
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                url: url
+            })
+        });
+    }
+
+    handleServingsChange(servings) {
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                servings: servings
+            })
+        });
+    }
+
+    handleDifficultyChange(difficultyRating) {
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                difficultyRating: difficultyRating
+            })
+        });
+    }
+
+    handleActiveTimeChange(activeTime) {
+        let newTime = JSON.parse(JSON.stringify(this.state.recipe.time));
+        newTime.active = activeTime;
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                time: newTime
+            })
+        });
+    }
+
+    handleTotalTimeChange(totalTime) {
+        let newTime = JSON.parse(JSON.stringify(this.state.recipe.time));
+        newTime.total = totalTime;
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                time: newTime
+            })
         });
     }
 
@@ -145,13 +249,21 @@ class NewRecipePage extends React.Component {
         return (
             <div>
                 <h1>New Recipe Page</h1>
-                <RecipeInfoSection />
-                <IngredientSection sections={this.state.SECTIONS} onClick={() => this.handleClick()}/>
-                <DirectionSection />
+                <RecipeInfoSection
+                    recipe={this.state.recipe}
+                    onNameChange={this.handleNameChange}
+                    onURLChange={this.handleURLChange}
+                    onServingsChange={this.handleServingsChange}
+                    onDifficultyChange={this.handleDifficultyChange}
+                    onActiveTimeChange={this.handleActiveTimeChange}
+                    onTotalTimeChange={this.handleTotalTimeChange} />
+
+                <DirectionSection recipe={this.state.recipe} />
                 <NoteSection />
             </div>
         );
     }
+    //<IngredientSection sections={this.state.newRecipe} onClick={() => this.handleClick()}/>
 }
 
 class App extends Component {
