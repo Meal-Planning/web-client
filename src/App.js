@@ -43,6 +43,10 @@ const Home = () => (
 )
 
 class NoteSection extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+
     render() {
         return (
             <div>
@@ -52,11 +56,65 @@ class NoteSection extends React.Component {
     }
 }
 
-class DirectionSection extends React.Component {
+class DirectionListItem extends React.Component {
+    constructor(props) {
+        super(props);
+        this.handleDirectionsChange = this.handleDirectionsChange.bind(this);
+        this.handleDeleteDirection = this.handleDeleteDirection.bind(this);
+    }
+
+    handleDirectionsChange(e) {
+        this.props.onDirectionChange(this.props.index, e.target.value);
+    }
+
+    handleDeleteDirection(e) {
+        this.props.onDirectionDelete(this.props.index);
+    }
+
     render() {
+        return (
+            <li><TextField value={this.props.direction} multiLine={true} onChange={this.handleDirectionsChange}/><FlatButton label="X" onClick={this.handleDeleteDirection}/></li>
+        );
+    }
+}
+
+class DirectionSection extends React.Component {
+    constructor(props) {
+        super(props);
+        this.handleDirectionsChange = this.handleDirectionsChange.bind(this);
+        this.handleNewDirection = this.handleNewDirection.bind(this);
+        this.handleDeleteDirection = this.handleDeleteDirection.bind(this);
+    }
+
+    handleDirectionsChange(index, value) {
+        this.props.onDirectionsChange(index, value);
+    }
+
+    handleDeleteDirection(index) {
+        this.props.onDirectionDeleted(index);
+    }
+
+    handleNewDirection(e) {
+        this.props.onDirectionAdded();
+    }
+
+    render() {
+        var self = this;
+        var rows = [];
+        this.props.recipe.directions.forEach(function (direction, index) {
+            rows.push(<DirectionListItem key={index}
+                                         index={index}
+                                         direction={direction}
+                                         onDirectionChange={self.handleDirectionsChange}
+                                         onDirectionDelete={self.handleDeleteDirection} />);
+        });
         return (
             <div>
                 <h2>Directions Section</h2>
+                <ol>
+                    {rows}
+                </ol>
+                <FlatButton label="Add New +" onClick={this.handleNewDirection}/>
             </div>
         );
     }
@@ -180,7 +238,7 @@ class NewRecipePage extends React.Component {
                     }
                 ],
                 ingredients: [],
-                directions: [],
+                directions: ['Do something.', 'Do something else.', 'And finally this...'],
                 notes: []
             }
         };
@@ -191,6 +249,9 @@ class NewRecipePage extends React.Component {
         this.handleDifficultyChange = this.handleDifficultyChange.bind(this);
         this.handleActiveTimeChange = this.handleActiveTimeChange.bind(this);
         this.handleTotalTimeChange = this.handleTotalTimeChange.bind(this);
+        this.handleDirectionsChange = this.handleDirectionsChange.bind(this);
+        this.handleNewDirection = this.handleNewDirection.bind(this);
+        this.handleDeleteDirection = this.handleDeleteDirection.bind(this);
     }
 
     handleNameChange(name) {
@@ -245,6 +306,36 @@ class NewRecipePage extends React.Component {
         });
     }
 
+    handleDirectionsChange(index, direction) {
+        let newDirections = JSON.parse(JSON.stringify(this.state.recipe.directions));
+        newDirections[index] = direction;
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                directions: newDirections
+            })
+        });
+    }
+
+    handleNewDirection() {
+        let newDirections = JSON.parse(JSON.stringify(this.state.recipe.directions));
+        newDirections.push('');
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                directions: newDirections
+            })
+        });
+    }
+
+    handleDeleteDirection(index) {
+        let newDirections = JSON.parse(JSON.stringify(this.state.recipe.directions));
+        newDirections.splice(index,1);
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                directions: newDirections
+            })
+        });
+    }
+
     render() {
         return (
             <div>
@@ -258,8 +349,14 @@ class NewRecipePage extends React.Component {
                     onActiveTimeChange={this.handleActiveTimeChange}
                     onTotalTimeChange={this.handleTotalTimeChange} />
 
-                <DirectionSection recipe={this.state.recipe} />
-                <NoteSection />
+                <DirectionSection
+                    recipe={this.state.recipe}
+                    onDirectionsChange={this.handleDirectionsChange}
+                    onDirectionAdded={this.handleNewDirection}
+                    onDirectionDeleted={this.handleDeleteDirection} />
+
+                <NoteSection
+                    recipe={this.state.recipe} />
             </div>
         );
     }
