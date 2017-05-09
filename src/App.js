@@ -42,15 +42,65 @@ const Home = () => (
     </div>
 )
 
-class NoteSection extends React.Component {
+class NoteListItem extends React.Component {
     constructor(props) {
         super(props);
+        this.handleNotesChange = this.handleNotesChange.bind(this);
+        this.handleDeleteNote = this.handleDeleteNote.bind(this);
+    }
+
+    handleNotesChange(e) {
+        this.props.onNoteChange(this.props.index, e.target.value);
+    }
+
+    handleDeleteNote(e) {
+        this.props.onNoteDelete(this.props.index);
     }
 
     render() {
         return (
+            <li><TextField value={this.props.note} multiLine={true} onChange={this.handleNotesChange}/><FlatButton label="X" onClick={this.handleDeleteNote}/></li>
+        );
+    }
+}
+
+class NoteSection extends React.Component {
+    constructor(props) {
+        super(props);
+        this.handleNotesChange = this.handleNotesChange.bind(this);
+        this.handleNewNote = this.handleNewNote.bind(this);
+        this.handleDeleteNote = this.handleDeleteNote.bind(this);
+    }
+
+    handleNotesChange(index, value) {
+        this.props.onNotesChange(index, value);
+    }
+
+    handleNewNote(e) {
+        this.props.onNoteAdded();
+    }
+
+    handleDeleteNote(index) {
+        this.props.onNoteDeleted(index);
+    }
+
+    render() {
+        var self = this;
+        var rows = [];
+        this.props.recipe.notes.forEach(function (note, index) {
+            rows.push(<NoteListItem key={index}
+                                    index={index}
+                                    note={note}
+                                    onNoteChange={self.handleNotesChange}
+                                    onNoteDelete={self.handleDeleteNote} />);
+        });
+        return (
             <div>
                 <h2>Notes Section</h2>
+                <ol>
+                    {rows}
+                </ol>
+                <FlatButton label="Add New +" onClick={this.handleNewNote}/>
             </div>
         );
     }
@@ -90,12 +140,12 @@ class DirectionSection extends React.Component {
         this.props.onDirectionsChange(index, value);
     }
 
-    handleDeleteDirection(index) {
-        this.props.onDirectionDeleted(index);
-    }
-
     handleNewDirection(e) {
         this.props.onDirectionAdded();
+    }
+
+    handleDeleteDirection(index) {
+        this.props.onDirectionDeleted(index);
     }
 
     render() {
@@ -252,6 +302,9 @@ class NewRecipePage extends React.Component {
         this.handleDirectionsChange = this.handleDirectionsChange.bind(this);
         this.handleNewDirection = this.handleNewDirection.bind(this);
         this.handleDeleteDirection = this.handleDeleteDirection.bind(this);
+        this.handleNotesChange = this.handleNotesChange.bind(this);
+        this.handleNewNote = this.handleNewNote.bind(this);
+        this.handleDeleteNote = this.handleDeleteNote.bind(this);
     }
 
     handleNameChange(name) {
@@ -336,6 +389,36 @@ class NewRecipePage extends React.Component {
         });
     }
 
+    handleNotesChange(index, note) {
+        let newNotes = JSON.parse(JSON.stringify(this.state.recipe.notes));
+        newNotes[index] = note;
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                notes: newNotes
+            })
+        });
+    }
+
+    handleNewNote() {
+        let newNotes = JSON.parse(JSON.stringify(this.state.recipe.notes));
+        newNotes.push('');
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                notes: newNotes
+            })
+        });
+    }
+
+    handleDeleteNote(index) {
+        let newNotes = JSON.parse(JSON.stringify(this.state.recipe.notes));
+        newNotes.splice(index,1);
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                notes: newNotes
+            })
+        });
+    }
+
     render() {
         return (
             <div>
@@ -356,7 +439,10 @@ class NewRecipePage extends React.Component {
                     onDirectionDeleted={this.handleDeleteDirection} />
 
                 <NoteSection
-                    recipe={this.state.recipe} />
+                    recipe={this.state.recipe}
+                    onNotesChange={this.handleNotesChange}
+                    onNoteAdded={this.handleNewNote}
+                    onNoteDeleted={this.handleDeleteNote} />
             </div>
         );
     }
