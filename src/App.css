@@ -24,8 +24,30 @@
 }
 
 
+.NewRecipePage {
+  margin: 8px;
+}
+
+.recipe-info-row {
+  display: flex;
+  flex-direction: row;
+}
+
+.recipe-info-row div {
+  flex: 1;
+}
+
 .sections-list {
-  width: 300px;
-  border: solid 1px #d9d9d9;
-  borderBottom: none;
+  list-style-type: none;
+  border: 1px solid black;
+  display: inline-block;
+}
+
+.add-ingredients-section {
+  display: flex;
+  flex-direction: row;
+}
+
+.add-ingredients-section div {
+  flex: 1;
 }

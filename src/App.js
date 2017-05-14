@@ -11,6 +11,8 @@ import TextField from 'material-ui/TextField';
 import {List, ListItem} from 'material-ui/List';
 import NavigationClose from 'material-ui/svg-icons/navigation/close';
 import FlatButton from 'material-ui/FlatButton';
+import AutoComplete from 'material-ui/AutoComplete';
+import MenuItem from 'material-ui/MenuItem';
 
 // -- Import Images
 import logo from './logo.svg';
@@ -59,7 +61,7 @@ class NoteListItem extends React.Component {
 
     render() {
         return (
-            <li><TextField value={this.props.note} multiLine={true} onChange={this.handleNotesChange}/><FlatButton label="X" onClick={this.handleDeleteNote}/></li>
+            <li><TextField id={this.props.index.toString()} value={this.props.note} multiLine={true} onChange={this.handleNotesChange}/><FlatButton label="X" onClick={this.handleDeleteNote}/></li>
         );
     }
 }
@@ -123,7 +125,7 @@ class DirectionListItem extends React.Component {
 
     render() {
         return (
-            <li><TextField value={this.props.direction} multiLine={true} onChange={this.handleDirectionsChange}/><FlatButton label="X" onClick={this.handleDeleteDirection}/></li>
+            <li><TextField id={this.props.index.toString()} value={this.props.direction} multiLine={true} onChange={this.handleDirectionsChange}/><FlatButton label="X" onClick={this.handleDeleteDirection}/></li>
         );
     }
 }
@@ -170,46 +172,132 @@ class DirectionSection extends React.Component {
     }
 }
 
-class AddSectionButton extends React.Component {
+class IngredientList extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+
     render() {
         return (
-            <FlatButton label="Add New +" onClick={() => this.props.onClick()}/>
+            <div>
+                <h3>Ingredients List</h3>
+            </div>
         );
     }
 }
 
-class SectionRow extends React.Component {
+class IngredientSearch extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+
+    render() {
+        const dataSource2 = ['12345', '23456', '34567'];
+        return (
+            <div>
+                <h3>Ingredients Search</h3>
+            </div>
+        );
+    }
+}
+
+class SectionListItem extends React.Component {
+    constructor(props) {
+        super(props);
+        this.handleIngredientSectionChange = this.handleIngredientSectionChange.bind(this);
+        this.handleDeleteIngredientSection = this.handleDeleteIngredientSection.bind(this);
+    }
+
+    handleIngredientSectionChange(e) {
+        this.props.onIngredientSectionChange(this.props.index, e.target.value);
+    }
+
+    handleDeleteIngredientSection(e) {
+        this.props.onIngredientSectionDeleted(this.props.index);
+    }
+
     render() {
         return (
-            <ListItem primaryText={this.props.name} rightIcon={<NavigationClose />} disabled={true} />
+            <li><TextField id={this.props.section.id.toString()} value={this.props.section.name} onChange={this.handleIngredientSectionChange}/><FlatButton label="X" onClick={this.handleDeleteIngredientSection}/></li>
         );
     }
 }
 
 class SectionTable extends React.Component {
+    constructor(props) {
+        super(props);
+        this.handleIngredientSectionChange = this.handleIngredientSectionChange.bind(this);
+        this.handleNewIngredientSection = this.handleNewIngredientSection.bind(this);
+        this.handleDeleteIngredientSection = this.handleDeleteIngredientSection.bind(this);
+    }
+
+    handleIngredientSectionChange(index, value) {
+        this.props.onIngredientSectionChange(index, value);
+    }
+
+    handleNewIngredientSection(e) {
+        this.props.onIngredientSectionAdded();
+    }
+
+    handleDeleteIngredientSection(index) {
+        this.props.onIngredientSectionDeleted(index);
+    }
+
     render() {
+        var self = this;
         var rows = [];
-        this.props.sections.forEach(function (section) {
-            rows.push(<SectionRow name={section} key={section}/>);
+        this.props.sections.forEach(function (section, index) {
+            rows.push(<SectionListItem key={section.id}
+                                       index={index}
+                                       section={section}
+                                       onIngredientSectionChange={self.handleIngredientSectionChange}
+                                       onIngredientSectionDeleted={self.handleDeleteIngredientSection} />);
         });
         return (
             <div>
                 <h3>Sections</h3>
-                <List className="sections-list">
+                <ul className="sections-list">
                     {rows}
-                </List>
-                <AddSectionButton onClick={() => this.props.onClick()}/>
+                </ul>
+                <br />
+                <FlatButton label="Add New +" onClick={this.handleNewIngredientSection}/>
             </div>
         );
     }
 }
 
 class IngredientSection extends React.Component {
+    constructor(props) {
+        super(props);
+        this.handleIngredientSectionChange = this.handleIngredientSectionChange.bind(this);
+        this.handleNewIngredientSection = this.handleNewIngredientSection.bind(this);
+        this.handleDeleteIngredientSection = this.handleDeleteIngredientSection.bind(this);
+    }
+
+    handleIngredientSectionChange(index, value) {
+        this.props.onIngredientSectionChange(index, value);
+    }
+
+    handleNewIngredientSection(e) {
+        this.props.onIngredientSectionAdded();
+    }
+
+    handleDeleteIngredientSection(index) {
+        this.props.onIngredientSectionDeleted(index);
+    }
+
     render() {
         return (
             <div>
                 <h2>Ingredients Section</h2>
-                <SectionTable sections={this.props.sections} onClick={() => this.props.onClick()}/>
+                <SectionTable sections={this.props.sections}
+                              onIngredientSectionChange={this.handleIngredientSectionChange}
+                              onIngredientSectionAdded={this.handleNewIngredientSection}
+                              onIngredientSectionDeleted={this.handleDeleteIngredientSection} />
+                <div className="add-ingredients-section">
+                    <IngredientSearch />
+                    <IngredientList />
+                </div>
             </div>
         );
     }
@@ -252,16 +340,32 @@ class RecipeInfoSection extends React.Component {
 
     render() {
         return (
-            <div>
+            <div className="recipe-info">
                 <h2>Recipe Info Section</h2>
-                <TextField value={this.props.recipe.name} floatingLabelText="Name" onChange={this.handleNameChange}/>
-                <TextField value={this.props.recipe.url} floatingLabelText="URL" onChange={this.handleURLChange}/>
-                <br/>
-                <TextField value={this.props.recipe.servings} floatingLabelText="Servings" onChange={this.handleServingsChange}/>
-                <TextField value={this.props.recipe.difficultyRating} floatingLabelText="Difficulty" onChange={this.handleDifficultyChange}/>
-                <TextField value={this.props.recipe.time.active} floatingLabelText="Active Time" onChange={this.handleActiveTimeChange}/>
-                <TextField value={this.props.recipe.time.total} floatingLabelText="Total Time" onChange={this.handleTotalTimeChange}/>
-                <br/>
+                <div className="recipe-info-row">
+                    <div>
+                        <TextField value={this.props.recipe.name} floatingLabelText="Name" onChange={this.handleNameChange}/>
+                    </div>
+                    <div>
+                        <TextField value={this.props.recipe.url} floatingLabelText="URL" onChange={this.handleURLChange}/>
+                    </div>
+                    <div />
+                    <div />
+                </div>
+                <div className="recipe-info-row">
+                    <div>
+                        <TextField value={this.props.recipe.servings} floatingLabelText="Servings" onChange={this.handleServingsChange}/>
+                    </div>
+                    <div>
+                        <TextField value={this.props.recipe.difficultyRating} floatingLabelText="Difficulty" onChange={this.handleDifficultyChange}/>
+                    </div>
+                    <div>
+                        <TextField value={this.props.recipe.time.active} floatingLabelText="Active Time" onChange={this.handleActiveTimeChange}/>
+                    </div>
+                    <div>
+                        <TextField value={this.props.recipe.time.total} floatingLabelText="Total Time" onChange={this.handleTotalTimeChange}/>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -305,6 +409,9 @@ class NewRecipePage extends React.Component {
         this.handleNotesChange = this.handleNotesChange.bind(this);
         this.handleNewNote = this.handleNewNote.bind(this);
         this.handleDeleteNote = this.handleDeleteNote.bind(this);
+        this.handleIngredientSectionChange = this.handleIngredientSectionChange.bind(this);
+        this.handleNewIngredientSection = this.handleNewIngredientSection.bind(this);
+        this.handleDeleteIngredientSection = this.handleDeleteIngredientSection.bind(this);
     }
 
     handleNameChange(name) {
@@ -419,9 +526,43 @@ class NewRecipePage extends React.Component {
         });
     }
 
+    handleIngredientSectionChange(index, ingredientSection) {
+        let newIngredientsSections = JSON.parse(JSON.stringify(this.state.recipe.ingredientSections));
+        newIngredientsSections[index].name = ingredientSection;
+        newIngredientsSections[index].id = !ingredientSection ? ingredientSection.toLowerCase().replace(/ /g,"_") : new Date().getUTCMilliseconds();
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                ingredientSections: newIngredientsSections
+            })
+        });
+    }
+
+    handleNewIngredientSection() {
+        let newIngredientsSections = JSON.parse(JSON.stringify(this.state.recipe.ingredientSections));
+        newIngredientsSections.push({
+            name: '',
+            id: new Date().getUTCMilliseconds()
+        });
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                ingredientSections: newIngredientsSections
+            })
+        });
+    }
+
+    handleDeleteIngredientSection(index) {
+        let newIngredientsSections = JSON.parse(JSON.stringify(this.state.recipe.ingredientSections));
+        newIngredientsSections.splice(index,1);
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                ingredientSections: newIngredientsSections
+            })
+        });
+    }
+
     render() {
         return (
-            <div>
+            <div className="NewRecipePage">
                 <h1>New Recipe Page</h1>
                 <RecipeInfoSection
                     recipe={this.state.recipe}
@@ -431,6 +572,12 @@ class NewRecipePage extends React.Component {
                     onDifficultyChange={this.handleDifficultyChange}
                     onActiveTimeChange={this.handleActiveTimeChange}
                     onTotalTimeChange={this.handleTotalTimeChange} />
+
+                <IngredientSection
+                    sections={this.state.recipe.ingredientSections}
+                    onIngredientSectionChange={this.handleIngredientSectionChange}
+                    onIngredientSectionAdded={this.handleNewIngredientSection}
+                    onIngredientSectionDeleted={this.handleDeleteIngredientSection} />
 
                 <DirectionSection
                     recipe={this.state.recipe}
@@ -446,7 +593,6 @@ class NewRecipePage extends React.Component {
             </div>
         );
     }
-    //<IngredientSection sections={this.state.newRecipe} onClick={() => this.handleClick()}/>
 }
 
 class App extends Component {
