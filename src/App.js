@@ -16,9 +16,13 @@ import MenuItem from 'material-ui/MenuItem';
 
 // -- Import Images
 import logo from './logo.svg';
+import ContentAdd from 'material-ui/svg-icons/content/add';
 
 // -- Import Styles
 import './App.css';
+
+// -- Import Nutrition Service
+import {GetIngredients} from './services/nutrition-service.js'
 
 // -- activate touch capabilities
 injectTapEventPlugin();
@@ -186,19 +190,83 @@ class IngredientList extends React.Component {
     }
 }
 
-class IngredientSearch extends React.Component {
+class IngredientSearchItem extends React.Component {
     constructor(props) {
         super(props);
+        this.addIngredient = this.addIngredient.bind(this);
+    }
+
+    addIngredient(e) {
+        //add ingredient to ingredientList
     }
 
     render() {
-        const dataSource2 = ['12345', '23456', '34567'];
+        return (
+            <ListItem primaryText={this.props.ingredient.name} rightIcon={<ContentAdd />} onClick={this.addIngredient} />
+        );
+    }
+    /*<li><p>{this.props.ingredient.name}</p><FlatButton label="+" onClick={this.addIngredient}/></li>*/
+}
+
+class IngredientSearch extends React.Component {
+    constructor(props) {
+        super(props);
+        this.handleSearchChange = this.handleSearchChange.bind(this);
+        this.addNewIngredient = this.addNewIngredient.bind(this);
+
+        this.loadIngredientSource();
+    }
+
+    loadIngredientSource() {
+        GetIngredients().then((ingredients) => {
+            this.setState({searchIngredients: ingredients});
+        });
+    }
+
+    handleSearchChange(e) {
+        //this.props.onSearchChange(e.target.value);
+        // can we get values here, without tracing back to parent component?
+        // I believe so, but we will have to have a function that handles the selected ingredient, passes it to the parent, and pushes that out to the ingredientList
+    }
+
+    addNewIngredient(e) {
+
+    }
+
+    state = {
+        searchIngredients: [],
+        /*dataSourceConfig: {
+            text: 'name',
+            value: 'ingredientId'
+        }*/
+    };
+
+    render() {
+        var self = this;
+        var rows = [];
+        this.state.searchIngredients.forEach(function (ingredient, index) {
+            rows.push(<IngredientSearchItem key={ingredient.ingredientId}
+                                            index={index}
+                                            ingredient={ingredient} />);
+        });
         return (
             <div>
                 <h3>Ingredients Search</h3>
+                <TextField hintText="Search for ingredient..." onChange={this.handleSearchChange} />
+                <List className="ingredient-search-list">
+                    {rows}
+                    <ListItem primaryText="Add new +" onClick={this.addNewIngredient} />
+                </List>
             </div>
         );
     }
+    /*<AutoComplete
+     hintText="Type anything"
+     filter={AutoComplete.caseInsensitiveFilter}
+     openOnFocus={true}
+     dataSource={this.state.dataSource}
+     dataSourceConfig={this.state.dataSourceConfig}
+     />*/
 }
 
 class SectionListItem extends React.Component {
@@ -392,8 +460,8 @@ class NewRecipePage extends React.Component {
                     }
                 ],
                 ingredients: [],
-                directions: ['Do something.', 'Do something else.', 'And finally this...'],
-                notes: []
+                directions: [''],
+                notes: ['']
             }
         };
 
