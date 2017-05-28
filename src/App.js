@@ -182,9 +182,15 @@ class IngredientList extends React.Component {
     }
 
     render() {
+        var self = this;
+        var rows = [];
+        this.props.recipe.ingredients.forEach(function (ingredient, index) {
+            rows.push(<p>{ingredient.name}</p>);
+        });
         return (
             <div>
                 <h3>Ingredients List</h3>
+                {rows}
             </div>
         );
     }
@@ -198,6 +204,16 @@ class IngredientSearchItem extends React.Component {
 
     addIngredient(e) {
         //add ingredient to ingredientList
+
+        // can we get values here, without tracing back to parent component?
+        // I believe so, but we will have to have a function that handles the selected ingredient, passes it to the parent, and pushes that out to the ingredientList
+
+
+        this.props.onIngredientAdded(this.props.ingredient);
+    }
+
+    handleNewIngredient(e) {
+        this.props.onIngredientSectionAdded();
     }
 
     render() {
@@ -212,6 +228,7 @@ class IngredientSearch extends React.Component {
     constructor(props) {
         super(props);
         this.handleSearchChange = this.handleSearchChange.bind(this);
+        this.addIngredient = this.addIngredient.bind(this);
         this.addNewIngredient = this.addNewIngredient.bind(this);
 
         this.loadIngredientSource();
@@ -219,35 +236,51 @@ class IngredientSearch extends React.Component {
 
     loadIngredientSource() {
         GetIngredients().then((ingredients) => {
-            this.setState({searchIngredients: ingredients});
+            this.setState({allIngredients: ingredients});
+
+            //no filter on load
+            this.setState({filteredIngredients: ingredients});
         });
     }
 
     handleSearchChange(e) {
-        //this.props.onSearchChange(e.target.value);
-        // can we get values here, without tracing back to parent component?
-        // I believe so, but we will have to have a function that handles the selected ingredient, passes it to the parent, and pushes that out to the ingredientList
+        var filteredList = [];
+        if (!e.target.value || e.target.value.trim() == '') {
+            // -- include all ingredients if list is empty
+            filteredList = this.state.allIngredients;
+        }
+        else {
+            // -- otherwise, filter list by search text
+            this.state.allIngredients.forEach(function (ingredient, index) {
+                if (ingredient.name.toLowerCase().indexOf(e.target.value.toLowerCase()) > -1) {
+                    filteredList.push(ingredient);
+                }
+            });
+        }
+        this.setState({filteredIngredients: filteredList});
+    }
+
+    addIngredient(value) {
+        this.props.onIngredientAdded(value);
     }
 
     addNewIngredient(e) {
-
+        //open New Ingredient modal
     }
 
     state = {
-        searchIngredients: [],
-        /*dataSourceConfig: {
-            text: 'name',
-            value: 'ingredientId'
-        }*/
+        allIngredients: [],
+        filteredIngredients: []
     };
 
     render() {
         var self = this;
         var rows = [];
-        this.state.searchIngredients.forEach(function (ingredient, index) {
+        this.state.filteredIngredients.forEach(function (ingredient, index) {
             rows.push(<IngredientSearchItem key={ingredient.ingredientId}
                                             index={index}
-                                            ingredient={ingredient} />);
+                                            ingredient={ingredient}
+                                            onIngredientAdded={self.addIngredient} />);
         });
         return (
             <div>
@@ -260,13 +293,6 @@ class IngredientSearch extends React.Component {
             </div>
         );
     }
-    /*<AutoComplete
-     hintText="Type anything"
-     filter={AutoComplete.caseInsensitiveFilter}
-     openOnFocus={true}
-     dataSource={this.state.dataSource}
-     dataSourceConfig={this.state.dataSourceConfig}
-     />*/
 }
 
 class SectionListItem extends React.Component {
@@ -340,6 +366,7 @@ class IngredientSection extends React.Component {
         this.handleIngredientSectionChange = this.handleIngredientSectionChange.bind(this);
         this.handleNewIngredientSection = this.handleNewIngredientSection.bind(this);
         this.handleDeleteIngredientSection = this.handleDeleteIngredientSection.bind(this);
+        this.addIngredient = this.addIngredient.bind(this);
     }
 
     handleIngredientSectionChange(index, value) {
@@ -354,17 +381,22 @@ class IngredientSection extends React.Component {
         this.props.onIngredientSectionDeleted(index);
     }
 
+    addIngredient(value) {
+        this.props.onIngredientAdded(value);
+    }
+
     render() {
         return (
             <div>
                 <h2>Ingredients Section</h2>
-                <SectionTable sections={this.props.sections}
+                <SectionTable sections={this.props.recipe.ingredientSections}
                               onIngredientSectionChange={this.handleIngredientSectionChange}
                               onIngredientSectionAdded={this.handleNewIngredientSection}
                               onIngredientSectionDeleted={this.handleDeleteIngredientSection} />
                 <div className="add-ingredients-section">
-                    <IngredientSearch />
-                    <IngredientList />
+                    <IngredientSearch recipe={this.props.recipe}
+                                      onIngredientAdded={this.addIngredient} />
+                    <IngredientList recipe={this.props.recipe} />
                 </div>
             </div>
         );
@@ -444,9 +476,9 @@ class NewRecipePage extends React.Component {
         super(props);
         this.state = {
             recipe: {
-                recipeId: 'test-id',
+                recipeId: '',
                 name: '',
-                url: 'test.com',
+                url: '',
                 time: {
                     active: 0,
                     total: 0
@@ -465,23 +497,32 @@ class NewRecipePage extends React.Component {
             }
         };
 
+        // -- RECIPE INFO SECTION
         this.handleNameChange = this.handleNameChange.bind(this);
         this.handleURLChange = this.handleURLChange.bind(this);
         this.handleServingsChange = this.handleServingsChange.bind(this);
         this.handleDifficultyChange = this.handleDifficultyChange.bind(this);
         this.handleActiveTimeChange = this.handleActiveTimeChange.bind(this);
         this.handleTotalTimeChange = this.handleTotalTimeChange.bind(this);
-        this.handleDirectionsChange = this.handleDirectionsChange.bind(this);
-        this.handleNewDirection = this.handleNewDirection.bind(this);
-        this.handleDeleteDirection = this.handleDeleteDirection.bind(this);
-        this.handleNotesChange = this.handleNotesChange.bind(this);
-        this.handleNewNote = this.handleNewNote.bind(this);
-        this.handleDeleteNote = this.handleDeleteNote.bind(this);
+
+        // -- INGREDIENTS SECTION
         this.handleIngredientSectionChange = this.handleIngredientSectionChange.bind(this);
         this.handleNewIngredientSection = this.handleNewIngredientSection.bind(this);
         this.handleDeleteIngredientSection = this.handleDeleteIngredientSection.bind(this);
+        this.addIngredient = this.addIngredient.bind(this);
+
+        // -- DIRECTIONS SECTION
+        this.handleDirectionsChange = this.handleDirectionsChange.bind(this);
+        this.handleNewDirection = this.handleNewDirection.bind(this);
+        this.handleDeleteDirection = this.handleDeleteDirection.bind(this);
+
+        // -- NOTES SECTION
+        this.handleNotesChange = this.handleNotesChange.bind(this);
+        this.handleNewNote = this.handleNewNote.bind(this);
+        this.handleDeleteNote = this.handleDeleteNote.bind(this);
     }
 
+    // -- RECIPE INFO SECTION
     handleNameChange(name) {
         this.setState({
             recipe: Object.assign({}, this.state.recipe, {
@@ -489,7 +530,6 @@ class NewRecipePage extends React.Component {
             })
         });
     }
-
     handleURLChange(url) {
         this.setState({
             recipe: Object.assign({}, this.state.recipe, {
@@ -497,7 +537,6 @@ class NewRecipePage extends React.Component {
             })
         });
     }
-
     handleServingsChange(servings) {
         this.setState({
             recipe: Object.assign({}, this.state.recipe, {
@@ -505,7 +544,6 @@ class NewRecipePage extends React.Component {
             })
         });
     }
-
     handleDifficultyChange(difficultyRating) {
         this.setState({
             recipe: Object.assign({}, this.state.recipe, {
@@ -513,7 +551,6 @@ class NewRecipePage extends React.Component {
             })
         });
     }
-
     handleActiveTimeChange(activeTime) {
         let newTime = JSON.parse(JSON.stringify(this.state.recipe.time));
         newTime.active = activeTime;
@@ -523,7 +560,6 @@ class NewRecipePage extends React.Component {
             })
         });
     }
-
     handleTotalTimeChange(totalTime) {
         let newTime = JSON.parse(JSON.stringify(this.state.recipe.time));
         newTime.total = totalTime;
@@ -534,66 +570,7 @@ class NewRecipePage extends React.Component {
         });
     }
 
-    handleDirectionsChange(index, direction) {
-        let newDirections = JSON.parse(JSON.stringify(this.state.recipe.directions));
-        newDirections[index] = direction;
-        this.setState({
-            recipe: Object.assign({}, this.state.recipe, {
-                directions: newDirections
-            })
-        });
-    }
-
-    handleNewDirection() {
-        let newDirections = JSON.parse(JSON.stringify(this.state.recipe.directions));
-        newDirections.push('');
-        this.setState({
-            recipe: Object.assign({}, this.state.recipe, {
-                directions: newDirections
-            })
-        });
-    }
-
-    handleDeleteDirection(index) {
-        let newDirections = JSON.parse(JSON.stringify(this.state.recipe.directions));
-        newDirections.splice(index,1);
-        this.setState({
-            recipe: Object.assign({}, this.state.recipe, {
-                directions: newDirections
-            })
-        });
-    }
-
-    handleNotesChange(index, note) {
-        let newNotes = JSON.parse(JSON.stringify(this.state.recipe.notes));
-        newNotes[index] = note;
-        this.setState({
-            recipe: Object.assign({}, this.state.recipe, {
-                notes: newNotes
-            })
-        });
-    }
-
-    handleNewNote() {
-        let newNotes = JSON.parse(JSON.stringify(this.state.recipe.notes));
-        newNotes.push('');
-        this.setState({
-            recipe: Object.assign({}, this.state.recipe, {
-                notes: newNotes
-            })
-        });
-    }
-
-    handleDeleteNote(index) {
-        let newNotes = JSON.parse(JSON.stringify(this.state.recipe.notes));
-        newNotes.splice(index,1);
-        this.setState({
-            recipe: Object.assign({}, this.state.recipe, {
-                notes: newNotes
-            })
-        });
-    }
-
+    // -- INGREDIENTS SECTION
     handleIngredientSectionChange(index, ingredientSection) {
         let newIngredientsSections = JSON.parse(JSON.stringify(this.state.recipe.ingredientSections));
         newIngredientsSections[index].name = ingredientSection;
@@ -604,7 +581,6 @@ class NewRecipePage extends React.Component {
             })
         });
     }
-
     handleNewIngredientSection() {
         let newIngredientsSections = JSON.parse(JSON.stringify(this.state.recipe.ingredientSections));
         newIngredientsSections.push({
@@ -617,13 +593,79 @@ class NewRecipePage extends React.Component {
             })
         });
     }
-
     handleDeleteIngredientSection(index) {
         let newIngredientsSections = JSON.parse(JSON.stringify(this.state.recipe.ingredientSections));
         newIngredientsSections.splice(index,1);
         this.setState({
             recipe: Object.assign({}, this.state.recipe, {
                 ingredientSections: newIngredientsSections
+            })
+        });
+    }
+    addIngredient(value) {
+        let newIngredients = JSON.parse(JSON.stringify(this.state.recipe.ingredients));
+        newIngredients.push(value);
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                ingredients: newIngredients
+            })
+        });
+    }
+
+    // -- DIRECTIONS SECTION
+    handleDirectionsChange(index, direction) {
+        let newDirections = JSON.parse(JSON.stringify(this.state.recipe.directions));
+        newDirections[index] = direction;
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                directions: newDirections
+            })
+        });
+    }
+    handleNewDirection() {
+        let newDirections = JSON.parse(JSON.stringify(this.state.recipe.directions));
+        newDirections.push('');
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                directions: newDirections
+            })
+        });
+    }
+    handleDeleteDirection(index) {
+        let newDirections = JSON.parse(JSON.stringify(this.state.recipe.directions));
+        newDirections.splice(index,1);
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                directions: newDirections
+            })
+        });
+    }
+
+    // -- NOTES SECTION
+    handleNotesChange(index, note) {
+        let newNotes = JSON.parse(JSON.stringify(this.state.recipe.notes));
+        newNotes[index] = note;
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                notes: newNotes
+            })
+        });
+    }
+    handleNewNote() {
+        let newNotes = JSON.parse(JSON.stringify(this.state.recipe.notes));
+        newNotes.push('');
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                notes: newNotes
+            })
+        });
+    }
+    handleDeleteNote(index) {
+        let newNotes = JSON.parse(JSON.stringify(this.state.recipe.notes));
+        newNotes.splice(index,1);
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                notes: newNotes
             })
         });
     }
@@ -642,10 +684,11 @@ class NewRecipePage extends React.Component {
                     onTotalTimeChange={this.handleTotalTimeChange} />
 
                 <IngredientSection
-                    sections={this.state.recipe.ingredientSections}
+                    recipe={this.state.recipe}
                     onIngredientSectionChange={this.handleIngredientSectionChange}
                     onIngredientSectionAdded={this.handleNewIngredientSection}
-                    onIngredientSectionDeleted={this.handleDeleteIngredientSection} />
+                    onIngredientSectionDeleted={this.handleDeleteIngredientSection}
+                    onIngredientAdded={this.addIngredient} />
 
                 <DirectionSection
                     recipe={this.state.recipe}
