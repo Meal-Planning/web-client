@@ -48,12 +48,26 @@
   flex-direction: row;
 }
 
+.add-ingredients-section div {
+  flex: 1;
+}
+
 .ingredient-search-list {
   width: 500px;
   height: 300px;
   overflow: auto;
 }
 
-.add-ingredients-section div {
+.ingredient-list {
+  list-style-type: none;
+  border: 1px solid black;
+}
+
+.ingredient-list-item {
+  display: flex;
+  flex-direction: row;
+}
+
+.ingredient-list-item-prop {
   flex: 1;
 }

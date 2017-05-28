@@ -12,6 +12,7 @@ import {List, ListItem} from 'material-ui/List';
 import NavigationClose from 'material-ui/svg-icons/navigation/close';
 import FlatButton from 'material-ui/FlatButton';
 import AutoComplete from 'material-ui/AutoComplete';
+import DropDownMenu from 'material-ui/DropDownMenu';
 import MenuItem from 'material-ui/MenuItem';
 
 // -- Import Images
@@ -26,6 +27,15 @@ import {GetIngredients} from './services/nutrition-service.js'
 
 // -- activate touch capabilities
 injectTapEventPlugin();
+
+// -- GLOBAL VARIABLES
+let MEASUREMENTS = ['Milliliters', 'Teaspoons', 'Tablespoons', 'Cups', 'Grams', 'Ounces', 'Pounds', 'Kilograms'];
+
+const styles = {
+    customWidth: {
+        width: 200
+    }
+};
 
 const Home = () => (
     <div className="App">
@@ -176,6 +186,47 @@ class DirectionSection extends React.Component {
     }
 }
 
+class IngredientListItem extends React.Component {
+    constructor(props) {
+        super(props);
+        this.handleDeleteIngredient = this.handleDeleteIngredient.bind(this);
+    }
+
+    handleDeleteIngredient(e) {
+        //this.props.onIngredientAdded(this.props.ingredient);
+    }
+
+    render() {
+        //Ingredient
+        //Amount
+        //Measurement
+        //Section
+
+        var self = this;
+        var measurementItems = [];
+        var sectionItems = [];
+        MEASUREMENTS.forEach(function (measurement, index) {
+            measurementItems.push(<MenuItem value={measurement} primaryText={measurement} />);
+        });
+        this.props.sections.forEach(function (section, index) {
+            sectionItems.push(<MenuItem value={section.id} primaryText={section.name} />);
+        });
+        return (
+            <li className="ingredient-list-item">
+                <FlatButton className="ingredient-list-item-prop" label="X" onClick={this.handleDeleteIngredient} />
+                <p className="ingredient-list-item-prop">{this.props.ingredient.name}</p>
+                <TextField className="ingredient-list-item-prop" value={this.props.ingredient.quantity} onChange={this.handleDeleteIngredient} />
+                <DropDownMenu  value={this.props.ingredient.measurement} onChange={this.handleDeleteIngredient} style={styles.customWidth} autoWidth={false}>
+                    {measurementItems}
+                </DropDownMenu>
+                <DropDownMenu  value={this.props.ingredient.section} onChange={this.handleDeleteIngredient} style={styles.customWidth} autoWidth={false}>
+                    {sectionItems}
+                </DropDownMenu>
+            </li>
+        );
+    }
+}
+
 class IngredientList extends React.Component {
     constructor(props) {
         super(props);
@@ -185,12 +236,14 @@ class IngredientList extends React.Component {
         var self = this;
         var rows = [];
         this.props.recipe.ingredients.forEach(function (ingredient, index) {
-            rows.push(<p>{ingredient.name}</p>);
+            rows.push(<IngredientListItem ingredient={ingredient} sections={self.props.recipe.ingredientSections} />)
         });
         return (
             <div>
                 <h3>Ingredients List</h3>
-                {rows}
+                <ul className="ingredient-list">
+                    {rows}
+                </ul>
             </div>
         );
     }
@@ -210,10 +263,6 @@ class IngredientSearchItem extends React.Component {
 
 
         this.props.onIngredientAdded(this.props.ingredient);
-    }
-
-    handleNewIngredient(e) {
-        this.props.onIngredientSectionAdded();
     }
 
     render() {
@@ -603,8 +652,15 @@ class NewRecipePage extends React.Component {
         });
     }
     addIngredient(value) {
+        var ingredient = {
+            id: value.ingredientId,
+            name: value.name,
+            quantity: 0,
+            measurement: MEASUREMENTS[0],
+            section: this.state.recipe.ingredientSections[0].id
+        };
         let newIngredients = JSON.parse(JSON.stringify(this.state.recipe.ingredients));
-        newIngredients.push(value);
+        newIngredients.push(ingredient);
         this.setState({
             recipe: Object.assign({}, this.state.recipe, {
                 ingredients: newIngredients
