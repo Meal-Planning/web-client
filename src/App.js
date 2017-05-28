@@ -189,20 +189,40 @@ class DirectionSection extends React.Component {
 class IngredientListItem extends React.Component {
     constructor(props) {
         super(props);
+        this.handleQuantityChange = this.handleQuantityChange.bind(this);
+        this.handleMeasurementChange = this.handleMeasurementChange.bind(this);
+        this.handleSectionChange = this.handleSectionChange.bind(this);
+        this.handleIngredientChange = this.handleIngredientChange.bind(this);
         this.handleDeleteIngredient = this.handleDeleteIngredient.bind(this);
     }
 
-    handleDeleteIngredient(e) {
-        //this.props.onIngredientAdded(this.props.ingredient);
+    handleQuantityChange(e) {
+        let newIngredient = JSON.parse(JSON.stringify(this.props.ingredient));
+        newIngredient.quantity = e.target.value;
+        this.handleIngredientChange(newIngredient);
+    }
+
+    handleMeasurementChange(e) {
+        let newIngredient = JSON.parse(JSON.stringify(this.props.ingredient));
+        newIngredient.measurement = e.target.innerText;
+        this.handleIngredientChange(newIngredient);
+    }
+
+    handleSectionChange(e) {
+        let newIngredient = JSON.parse(JSON.stringify(this.props.ingredient));
+        newIngredient.section = e.target.value;
+        this.handleIngredientChange(newIngredient);
+    }
+
+    handleIngredientChange(ingredient) {
+        this.props.onIngredientChange(ingredient);
+    }
+
+    handleDeleteIngredient() {
+        this.props.onIngredientDeleted(this.props.ingredient.id);
     }
 
     render() {
-        //Ingredient
-        //Amount
-        //Measurement
-        //Section
-
-        var self = this;
         var measurementItems = [];
         var sectionItems = [];
         MEASUREMENTS.forEach(function (measurement, index) {
@@ -213,13 +233,13 @@ class IngredientListItem extends React.Component {
         });
         return (
             <li className="ingredient-list-item">
-                <FlatButton className="ingredient-list-item-prop" label="X" onClick={this.handleDeleteIngredient} />
-                <p className="ingredient-list-item-prop">{this.props.ingredient.name}</p>
-                <TextField className="ingredient-list-item-prop" value={this.props.ingredient.quantity} onChange={this.handleDeleteIngredient} />
-                <DropDownMenu  value={this.props.ingredient.measurement} onChange={this.handleDeleteIngredient} style={styles.customWidth} autoWidth={false}>
+                <FlatButton style={{flex: .25}} label="X" onClick={this.handleDeleteIngredient} />
+                <p style={{flex: 1}} >{this.props.ingredient.name}</p>
+                <TextField style={{flex: 1}} value={this.props.ingredient.quantity} onChange={this.handleQuantityChange} />
+                <DropDownMenu style={{flex: 1}} value={this.props.ingredient.measurement} onChange={this.handleMeasurementChange}>
                     {measurementItems}
                 </DropDownMenu>
-                <DropDownMenu  value={this.props.ingredient.section} onChange={this.handleDeleteIngredient} style={styles.customWidth} autoWidth={false}>
+                <DropDownMenu style={{flex: 1}} value={this.props.ingredient.section} onChange={this.handleSectionChange}>
                     {sectionItems}
                 </DropDownMenu>
             </li>
@@ -230,13 +250,26 @@ class IngredientListItem extends React.Component {
 class IngredientList extends React.Component {
     constructor(props) {
         super(props);
+        this.handleIngredientChange = this.handleIngredientChange.bind(this);
+        this.handleDeleteIngredient = this.handleDeleteIngredient.bind(this);
+    }
+
+    handleIngredientChange(ingredient) {
+        this.props.onIngredientChange(ingredient);
+    }
+
+    handleDeleteIngredient(ingredientId) {
+        this.props.onIngredientDeleted(ingredientId);
     }
 
     render() {
         var self = this;
         var rows = [];
         this.props.recipe.ingredients.forEach(function (ingredient, index) {
-            rows.push(<IngredientListItem ingredient={ingredient} sections={self.props.recipe.ingredientSections} />)
+            rows.push(<IngredientListItem ingredient={ingredient}
+                                          sections={self.props.recipe.ingredientSections}
+                                          onIngredientChange={self.handleIngredientChange}
+                                          onIngredientDeleted={self.handleDeleteIngredient} />)
         });
         return (
             <div>
@@ -416,6 +449,8 @@ class IngredientSection extends React.Component {
         this.handleNewIngredientSection = this.handleNewIngredientSection.bind(this);
         this.handleDeleteIngredientSection = this.handleDeleteIngredientSection.bind(this);
         this.addIngredient = this.addIngredient.bind(this);
+        this.handleIngredientChange = this.handleIngredientChange.bind(this);
+        this.handleDeleteIngredient = this.handleDeleteIngredient.bind(this);
     }
 
     handleIngredientSectionChange(index, value) {
@@ -434,6 +469,14 @@ class IngredientSection extends React.Component {
         this.props.onIngredientAdded(value);
     }
 
+    handleIngredientChange(ingredient) {
+        this.props.onIngredientChange(ingredient);
+    }
+
+    handleDeleteIngredient(ingredientId) {
+        this.props.onIngredientDeleted(ingredientId);
+    }
+
     render() {
         return (
             <div>
@@ -445,7 +488,9 @@ class IngredientSection extends React.Component {
                 <div className="add-ingredients-section">
                     <IngredientSearch recipe={this.props.recipe}
                                       onIngredientAdded={this.addIngredient} />
-                    <IngredientList recipe={this.props.recipe} />
+                    <IngredientList recipe={this.props.recipe}
+                                    onIngredientChange={this.handleIngredientChange}
+                                    onIngredientDeleted={this.handleDeleteIngredient} />
                 </div>
             </div>
         );
@@ -559,6 +604,8 @@ class NewRecipePage extends React.Component {
         this.handleNewIngredientSection = this.handleNewIngredientSection.bind(this);
         this.handleDeleteIngredientSection = this.handleDeleteIngredientSection.bind(this);
         this.addIngredient = this.addIngredient.bind(this);
+        this.handleIngredientChange = this.handleIngredientChange.bind(this);
+        this.handleDeleteIngredient = this.handleDeleteIngredient.bind(this);
 
         // -- DIRECTIONS SECTION
         this.handleDirectionsChange = this.handleDirectionsChange.bind(this);
@@ -667,6 +714,26 @@ class NewRecipePage extends React.Component {
             })
         });
     }
+    handleIngredientChange(ingredient) {
+        let newIngredients = JSON.parse(JSON.stringify(this.state.recipe.ingredients));
+        var index = this.state.recipe.ingredients.map((a) => a.id).indexOf(ingredient.id);
+        newIngredients[index] = ingredient;
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                ingredients: newIngredients
+            })
+        });
+    }
+    handleDeleteIngredient(ingredientId) {
+        let newIngredients = JSON.parse(JSON.stringify(this.state.recipe.ingredients));
+        var index = this.state.recipe.ingredients.map((a) => a.id).indexOf(ingredientId);
+        newIngredients.splice(index,1);
+        this.setState({
+            recipe: Object.assign({}, this.state.recipe, {
+                ingredients: newIngredients
+            })
+        });
+    }
 
     // -- DIRECTIONS SECTION
     handleDirectionsChange(index, direction) {
@@ -744,7 +811,9 @@ class NewRecipePage extends React.Component {
                     onIngredientSectionChange={this.handleIngredientSectionChange}
                     onIngredientSectionAdded={this.handleNewIngredientSection}
                     onIngredientSectionDeleted={this.handleDeleteIngredientSection}
-                    onIngredientAdded={this.addIngredient} />
+                    onIngredientAdded={this.addIngredient}
+                    onIngredientChange={this.handleIngredientChange}
+                    onIngredientDeleted={this.handleDeleteIngredient} />
 
                 <DirectionSection
                     recipe={this.state.recipe}
